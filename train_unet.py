@@ -1,10 +1,13 @@
 
 import torch
 import torch.nn as nn
+import numpy as np
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
 from tqdm import tqdm  
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
+
 
 from unet.dataset import FMRI3DDataset
 from unet.model import UNet3DfMRI
@@ -33,16 +36,40 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
 
             y_cropped = UNet3DfMRI.crop_to_match(y, pred)
 
-            loss = loss_fn(pred, y_cropped) * 1e2
+            loss = loss_fn(pred, y_cropped)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
+            progress_bar.set_postfix(loss=loss.item())
 
             # 🔁 Scalar logging every 10 iterations
             if writer and (global_step % 10 == 0):
                 writer.add_scalar("Loss/train", loss.item(), global_step)
+                pred_np = pred.detach().cpu().numpy()
+                y_np = y_cropped.detach().cpu().numpy()
+
+                psnr_total = 0.0
+                ssim_total = 0.0
+                
+                # Calculate over entire batch
+                for i in range(pred_np.shape[0]):  
+                    pred_vol = np.squeeze(pred_np[i])
+                    y_vol = np.squeeze(y_np[i])
+
+                    psnr = peak_signal_noise_ratio(y_vol, pred_vol, data_range=1.0)
+                    ssim = structural_similarity(y_vol, pred_vol, data_range=1.0)
+
+                    psnr_total += psnr
+                    ssim_total += ssim
+
+                avg_psnr = psnr_total / pred_np.shape[0]
+                avg_ssim = ssim_total / pred_np.shape[0]
+
+                writer.add_scalar("Train/Loss", loss.item(), global_step)
+                writer.add_scalar("Train/PSNR", avg_psnr, global_step)
+                writer.add_scalar("Train/SSIM", avg_ssim, global_step)
 
             # 🔁 Visual log every 1/10 epoch
             if writer and (batch_idx % (len(dataloader) // 10 + 1) == 0):
@@ -62,7 +89,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
         if writer:
             writer.add_scalar("Loss/epoch_avg", avg_loss, epoch + 1)
 
-        torch.save(model.state_dict(), f"model_weights_epoch{epoch + 1}.pth")
+        torch.save(model.state_dict(), f"./runs/checkpoints/model_weights_epoch{epoch + 1}.pth")
 
 
 
