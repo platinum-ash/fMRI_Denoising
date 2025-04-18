@@ -51,7 +51,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
                     y_slice = y_cropped[0, 0, :, :, y.shape[4] // 2].cpu().unsqueeze(0)
                     pred_slice = pred[0, 0, :, :, pred.shape[4] // 2].cpu().unsqueeze(0)
 
-                    grid = make_grid(torch.stack([x_slice, y_slice, pred_slice]), nrow=3, normalize=True)
+                    grid = make_grid(torch.stack([x_slice, y_slice, pred_slice]), nrow=3, normalize=False)
                     writer.add_image(f"Epoch_{epoch+1}/Input_GT_Pred", grid, global_step)
 
             global_step += 1
