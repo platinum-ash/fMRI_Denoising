@@ -18,7 +18,7 @@ from unet.evaluate import evaluate_model
 # Training & Evaluation
 # -----------------------------
 
-def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 5, lr: float = 1e-4, writer: SummaryWriter = None):
+def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 5, lr: float = 1e-4, writer: SummaryWriter = None, resume_from_epoch: int = 0):
     model.train()
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -26,7 +26,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
 
     global_step = 0
 
-    for epoch in range(epochs):
+    for epoch in range(resume_from_epoch, epochs):
         total_loss = 0
         progress_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}", leave=False)
 
@@ -99,12 +99,12 @@ if __name__ == "__main__":
     num_epochs = 4
     learning_rate = 1e-4
     writer = SummaryWriter()
+    resume= True
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     full_dataset = FMRI3DDataset(root_dir)
 
-    # Example: assuming `full_dataset` is your full fMRI dataset
     total_size = len(full_dataset)
     train_size = int(0.8 * total_size)
     test_size = total_size - train_size
@@ -116,7 +116,10 @@ if __name__ == "__main__":
 
     model = UNet3DfMRI()
     print("Starting training...")
-    train_model(model, train_loader, device, epochs=num_epochs, lr=learning_rate, writer=writer)
+    if resume:
+        model.load_state_dict(torch.load("runs/checkpoints/model_weights_epoch1.pth"))
+
+    train_model(model, train_loader, device, epochs=num_epochs, lr=learning_rate, writer=writer, resume_from_epoch=1)
 
     print("Evaluating and visualizing...")
     evaluate_model(model, test_loader, device)
