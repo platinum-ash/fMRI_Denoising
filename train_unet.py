@@ -34,9 +34,24 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
             x, y = x.to(device), y.to(device)
             pred = model(x)
 
-            y_cropped = UNet3DfMRI.crop_to_match(y, pred)
+            # Delete extra padded dimension before computing loss
+            if pred.shape[4] > y.shape[4]:
+                pred = pred[..., :y.shape[4]]
 
-            loss = loss_fn(pred, y_cropped)
+            # Create masks
+            threshold = 0.3  
+            bright_mask = (y > threshold).float()
+            dark_mask = 1.0 - bright_mask 
+
+            per_voxel_loss = loss_fn(pred, y)
+
+            # Apply masks
+            bright_loss = (per_voxel_loss * bright_mask).sum() / bright_mask.sum().clamp(min=1.0)
+            dark_loss = (per_voxel_loss * dark_mask).sum() / dark_mask.sum().clamp(min=1.0)
+
+            # Weighted total loss
+            loss = 0.8 * bright_loss + 0.2 * dark_loss
+            loss *= 1e3
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
