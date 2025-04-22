@@ -18,12 +18,10 @@ from unet.evaluate import evaluate_model
 # Training & Evaluation
 # -----------------------------
 
-def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 5, lr: float = 1e-4, writer: SummaryWriter = None, resume_from: int = 4):
+def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device, epochs: int = 5, writer: SummaryWriter = None, resume_from: int = 4):
     model.train()
     model.to(device)
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=lr
-    )
+
     loss_fn = nn.MSELoss()
 
     global_step = 0
@@ -109,11 +107,14 @@ def train_model(model: nn.Module, dataloader: DataLoader, device, epochs: int = 
 
 if __name__ == "__main__":
     root_dir = "./data"
+    checkpoint_path = ''
+    resume= True
     batch_size = 2
     num_epochs = 4
     learning_rate = 1e-4
+    
     writer = SummaryWriter()
-    resume= True
+    
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -131,9 +132,11 @@ if __name__ == "__main__":
     model = UNet3DfMRI()
     print("Starting training...")
     if resume:
-        model.load_state_dict(torch.load("runs/checkpoints/model_weights_epoch1.pth"))
+        model.load_state_dict(torch.load(checkpoint_path))
+    
 
-    train_model(model, train_loader, device, epochs=num_epochs, lr=learning_rate, writer=writer, resume_from_epoch=1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    train_model(model, train_loader, device, epochs=num_epochs, optimizer=optimizer, writer=writer, resume_from_epoch=1)
 
     print("Evaluating and visualizing...")
     evaluate_model(model, test_loader, device)
