@@ -39,11 +39,9 @@ class FMRI3DDataset(Dataset):
         path, t = self.samples[idx]
         key = (path, t)
 
-        # 1) ensure current slice is loaded
         if key not in self.slice_cache:
             self.slice_cache[key] = nib.load(path).get_fdata()[..., t]
 
-        # 2) preload next `preload_count` slices
         self._maintain_cache(idx)
 
         volume = self.slice_cache[key]

@@ -15,7 +15,7 @@ from unet.evaluate import evaluate_model
 
 
 # -----------------------------
-# Training & Evaluation
+# Training
 # -----------------------------
 
 def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device, epochs: int = 5, writer: SummaryWriter = None, resume_from: int = 4):
@@ -49,7 +49,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim
             bright_loss = (per_voxel_loss * bright_mask).sum() / bright_mask.sum().clamp(min=1.0)
             dark_loss = (per_voxel_loss * dark_mask).sum() / dark_mask.sum().clamp(min=1.0)
 
-            # Weighted total loss
+            # weighted total loss
             loss = 0.8 * bright_loss + 0.2 * dark_loss
             loss *= 1e2
 
@@ -60,7 +60,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim
             total_loss += loss.item()
             progress_bar.set_postfix(loss=loss.item())
 
-            # 🔁 Scalar logging every 10 iterations
+            # logging every 10 iterations
             if global_step % 10 == 0:
                 writer.add_scalar("Loss/train", loss.item(), global_step)
                 pred_np = pred.detach().cpu().numpy()
@@ -87,7 +87,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim
                 writer.add_scalar("Train/PSNR", avg_psnr, global_step)
                 writer.add_scalar("Train/SSIM", avg_ssim, global_step)
 
-            # 🔁 Visual log every 1/20 epoch
+            # log every 1/20 epoch
             if batch_idx % (len(dataloader) // 20 + 1) == 0:
                 with torch.no_grad():
                     x_slice = x[0, 0, :, :, x.shape[4] // 2].cpu().unsqueeze(0)

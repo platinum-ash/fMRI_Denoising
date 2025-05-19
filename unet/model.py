@@ -59,7 +59,7 @@ class UNet3DfMRI(nn.Module):
         )
 
     def forward(self, x):
-        # 1) compute padding so D,H,W become multiples of 16
+        # compute padding so D,H,W become multiples of 16
         factor = 16
         _,_, D, H, W = x.shape
         pad_d = (factor - (D % factor)) % factor
@@ -70,16 +70,16 @@ class UNet3DfMRI(nn.Module):
         x = F.pad(x, (0, pad_w, 0, pad_h, 0, pad_d))
         orig = (D, H, W)
 
-        # 2) Encoder
+        # Encoder
         c1 = self.enc1(x); p1 = self.pool1(c1)
         c2 = self.enc2(p1); p2 = self.pool2(c2)
         c3 = self.enc3(p2); p3 = self.pool3(c3)
         c4 = self.enc4(p3); p4 = self.pool4(c4)
 
-        # 3) Bottleneck
+        # Bottleneck
         bn = self.bottleneck(p4)
 
-        # 4) Decoder (direct concat—no cropping)
+        #Decoder (direct concat—no cropping)
         u4 = self.up4(bn);   d4 = self.dec4(torch.cat([c4, u4], dim=1))
         u3 = self.up3(d4);   d3 = self.dec3(torch.cat([c3, u3], dim=1))
         u2 = self.up2(d3);   d2 = self.dec2(torch.cat([c2, u2], dim=1))
@@ -87,6 +87,6 @@ class UNet3DfMRI(nn.Module):
 
         out = self.output_conv(d1)
 
-        # 5) un‑pad back to original D,H,W
+        #  un‑pad back to original D,H,W
         D0, H0, W0 = orig
         return out[..., :D0, :H0, :W0]

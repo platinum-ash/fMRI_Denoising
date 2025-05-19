@@ -34,7 +34,6 @@ def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, device: torc
             pred_np = pred.cpu().numpy()
             y_np = y.cpu().numpy()
 
-            # Batch-wise metric calculation
             for j in range(pred_np.shape[0]):
                 pred_vol = np.squeeze(pred_np[j])
                 y_vol = np.squeeze(y_np[j])
@@ -46,7 +45,6 @@ def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, device: torc
                 ssim_total += ssim
                 count += 1
 
-            # Optional: update tqdm postfix with running averages
             avg_psnr = psnr_total / count
             avg_ssim = ssim_total / count
             progress_bar.set_postfix(PSNR=f"{avg_psnr:.2f}", SSIM=f"{avg_ssim:.3f}")
