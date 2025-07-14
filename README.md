@@ -1,4 +1,4 @@
-# fMRI Image Denoising Training Pipeline
+# fMRI Image Denoising Training Pipeline (w Brightness Loss)
 
 This project provides a training pipeline for medical image data in NIfTI format (`.nii.gz`). The pipeline is designed for flexibility and easy experimentation using Jupyter Notebooks.
 
