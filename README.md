@@ -20,36 +20,9 @@ project-root/
 
 ## 🚀 Getting Started
 
-### 1. Prepare Your Data
+### 🛠 Requirements
 
-* Place your training `.nii.gz` files in the `data/` folder.
-* Place your validation `.nii.gz` files in the `validation/` folder.
-
-### 2. Train the Model
-
-Run the `final_train.ipynb` notebook to:
-
-* Load and preprocess the data
-* Set up the model and training parameters
-* Train the model
-* Evaluate the results on the validation set
-
-### 3. Customize Parameters
-
-You can customize various training parameters inside the notebook:
-
-* **Learning Rate**
-* **Optimizer**
-* **Batch Size**
-* **Number of Epochs**
-
-Modify these settings at in the notebook to experiment with different training configurations.
-
----
-
-## 🛠 Requirements
-
-Make sure to install all dependencies and include:
+Make sure to install all dependencies, including:
 
 * Python 3.8+
 * NumPy
@@ -61,9 +34,56 @@ Make sure to install all dependencies and include:
 
 ---
 
+### 🧪 Creating a Conda Environment
+
+To create a Conda environment with all required dependencies:
+
+1. Ensure you have [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.anaconda.com/) installed.
+
+2. Run the following command from the project directory:
+
+```bash
+conda env create -f environment.yml
+```
+
+3. Activate the environment:
+
+```bash
+conda activate mri_project
+```
+
+---
+
+### 1. Prepare Your Data
+
+* Place your training `.nii.gz` files in the `data/` folder.
+* Place your validation `.nii.gz` files in the `validation/` folder.
+
+### 2. Customize Parameters
+
+You can customize various training parameters inside the notebook:
+
+* **Learning Rate**
+* **Optimizer**
+* **Batch Size**
+* **Number of Epochs**
+
+Modify these settings in the notebook to experiment with different training configurations.
+
+---
+
+### 3. Train the Model
+
+Run the `final_train.ipynb` notebook to:
+
+* Load and preprocess the data
+* Set up the model and training parameters
+* Train the model
+* Evaluate the results on the validation set
+
+
+
 ## 📈 Output
 
 * The notebook will display training loss and validation metrics.
 * You can modify it to save models, logs, or predictions as needed.
-
----
