@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
-from skimage.metrics import peak_signal_noise_ratio as psnr
-from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio
+from skimage.metrics import structural_similarity
 import numpy as np
 from tqdm import tqdm  
 
@@ -10,43 +10,57 @@ from tqdm import tqdm
 from unet.dataset import FMRI3DDataset
 from unet.model import UNet3DfMRI
 
-def evaluate_model(model, dataloader, device):
+def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, device: torch.device):
     model.eval()
     model.to(device)
 
-    mse_list = []
-    psnr_list = []
-    ssim_list = []
+    psnr_total = 0.0
+    ssim_total = 0.0
+    count = 0
 
     with torch.no_grad():
-        for x, y in tqdm(dataloader, desc="Evaluating", leave=False):
-            x, y = x.to(device), y.to(device)
+        progress_bar = tqdm(test_loader, desc="Evaluating", leave=False)
+        for i, (x, y) in enumerate(progress_bar):
+            x = x.to(device)
+            y = y.to(device)
+
             pred = model(x)
-            y_cropped = UNet3DfMRI.crop_to_match(y, pred)
 
-            # Convert tensors to numpy
-            y_np = y_cropped.squeeze().cpu().numpy()
-            pred_np = pred.squeeze().cpu().numpy()
+            # If padded during training, remove extra depth slice
+            if pred.shape[4] > y.shape[4]:
+                pred = pred[..., :y.shape[4]]
 
-            # Metrics per 3D volume
-            mse_score = np.mean((y_np - pred_np) ** 2)
-            psnr_score = psnr(y_np, pred_np, data_range=1.0)
-            ssim_score = ssim(y_np, pred_np, data_range=1.0)
+            # Convert to numpy for metric computation
+            pred_np = pred.cpu().numpy()
+            y_np = y.cpu().numpy()
 
-            mse_list.append(mse_score)
-            psnr_list.append(psnr_score)
-            ssim_list.append(ssim_score)
+            for j in range(pred_np.shape[0]):
+                pred_vol = np.squeeze(pred_np[j])
+                y_vol = np.squeeze(y_np[j])
 
-    print(f"Evaluation Results:")
-    print(f"  MSE  : {np.mean(mse_list):.6f}")
-    print(f"  PSNR : {np.mean(psnr_list):.2f} dB")
-    print(f"  SSIM : {np.mean(ssim_list):.4f}")
+                psnr = peak_signal_noise_ratio(y_vol, pred_vol, data_range=1.0)
+                ssim = structural_similarity(y_vol, pred_vol, data_range=1.0)
+
+                psnr_total += psnr
+                ssim_total += ssim
+                count += 1
+
+            avg_psnr = psnr_total / count
+            avg_ssim = ssim_total / count
+            progress_bar.set_postfix(PSNR=f"{avg_psnr:.2f}", SSIM=f"{avg_ssim:.3f}")
+
+
+    avg_psnr = psnr_total / count
+    avg_ssim = ssim_total / count
+
+    print(f"Evaluation Results — PSNR: {avg_psnr:.4f}, SSIM: {avg_ssim:.4f}")
+    return avg_psnr, avg_ssim
 
 
 
 if __name__ == "__main__":
 
-    root_dir = "./eval_data"
+    root_dir = "./validation"
 
     device = torch.device("cpu")
 
