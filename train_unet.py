@@ -18,7 +18,7 @@ from unet.evaluate import evaluate_model
 # Training
 # -----------------------------
 
-def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device, epochs: int = 5, writer: SummaryWriter = None, resume_from: int = 4):
+def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device, epochs: int = 6, writer: SummaryWriter = None, resume_from: int = 0):
     model.train()
     model.to(device)
 
@@ -102,15 +102,15 @@ def train_model(model: nn.Module, dataloader: DataLoader, optimizer: torch.optim
         avg_loss = total_loss / len(dataloader)
         print(f"Epoch {epoch + 1}/{epochs}, Avg Loss: {avg_loss:.4f}")
 
-        torch.save(model.state_dict(), f"./runs/checkpoints/weighted_loss_after_pad/model_weights_epoch{epoch + 1}.pth")
+        torch.save(model.state_dict(), f"./runs/checkpoints/test/model_weights_epoch{epoch + 1}.pth")
 
 
 if __name__ == "__main__":
     root_dir = "./data"
     checkpoint_path = ''
-    resume= True
-    batch_size = 2
-    num_epochs = 4
+    resume= False
+    batch_size = 4
+    num_epochs = 6
     learning_rate = 1e-4
     
     writer = SummaryWriter()
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     
 
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-    train_model(model, train_loader, device, epochs=num_epochs, optimizer=optimizer, writer=writer, resume_from_epoch=1)
+    train_model(model, train_loader, device, epochs=num_epochs, optimizer=optimizer, writer=writer, resume_from=0)
 
     print("Evaluating and visualizing...")
     evaluate_model(model, test_loader, device)

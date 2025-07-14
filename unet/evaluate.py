@@ -49,8 +49,6 @@ def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, device: torc
             avg_ssim = ssim_total / count
             progress_bar.set_postfix(PSNR=f"{avg_psnr:.2f}", SSIM=f"{avg_ssim:.3f}")
 
-            if i > 100:
-                break
 
     avg_psnr = psnr_total / count
     avg_ssim = ssim_total / count
